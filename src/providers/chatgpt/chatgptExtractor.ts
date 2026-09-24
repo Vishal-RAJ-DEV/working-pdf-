@@ -97,6 +97,12 @@ export function getRoleNodes(document: Document): Element[] {
     if (getRole(node)) add(node);
   }
 
+  // Some current variants expose only the shared .text-message marker.
+  // Resolve its role from distinctive message structure in getRole().
+  for (const node of Array.from(document.querySelectorAll(CHATGPT_SELECTORS.heuristicMessageNodes))) {
+    if (getRole(node)) add(node);
+  }
+
   return Array.from(nodes).sort((a, b) => {
     if (a === b) return 0;
     const position = a.compareDocumentPosition(b);
