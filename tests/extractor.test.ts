@@ -21,6 +21,35 @@ describe("ChatGPT conversation extraction", () => {
     expect(data.title).toBe("Binary Search");
   });
 
+  it("extracts messages when the role is stored on the conversation turn wrapper", () => {
+    document.body.innerHTML = `
+      <article data-testid="conversation-turn-10" data-turn="user" data-turn-id="user-uuid">
+        <div data-testid="collapsible-user-message-content">Explain the new ChatGPT layout</div>
+      </article>
+      <article data-testid="conversation-turn-11" data-turn="assistant" data-turn-id="assistant-uuid">
+        <div class="markdown"><p>The turn wrapper owns the role.</p></div>
+      </article>
+    `;
+    const data = extractChatGPTConversation(document, window.location);
+    expect(data.messages.map((message) => message.role)).toEqual(["user", "assistant"]);
+    expect(data.messages.map((message) => message.id)).toEqual(["user-uuid", "assistant-uuid"]);
+    expect(data.messages.map((message) => message.plainText)).toEqual([
+      "Explain the new ChatGPT layout",
+      "The turn wrapper owns the role."
+    ]);
+  });
+
+  it("supports message UUID as a stable identity fallback", () => {
+    document.body.innerHTML = `
+      <article data-testid="conversation-turn-20" data-message-uuid="uuid-20" data-turn="user">
+        <div data-testid="collapsible-user-message-content">Same text</div>
+      </article>
+    `;
+    const data = extractChatGPTConversation(document, window.location);
+    expect(data.messageCount).toBe(1);
+    expect(data.messages[0].id).toBe("uuid-20");
+  });
+
   it("deduplicates repeated role nodes by stable turn id", () => {
     document.body.innerHTML = `
       <section data-testid="conversation-turn-0" data-turn-id="same"><div data-message-author-role="user"><p>Hello</p></div><div data-message-author-role="user"><p>Hello duplicate</p></div></section>
