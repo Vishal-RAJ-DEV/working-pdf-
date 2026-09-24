@@ -3,7 +3,7 @@ import { join } from "node:path";
 
 const manifest = JSON.parse(await readFile("public/manifest.json", "utf8"));
 if (manifest.manifest_version !== 3) throw new Error("Manifest must use MV3");
-const expectedPermissions = ["activeTab", "storage"];
+const expectedPermissions = ["activeTab", "storage", "scripting"];
 for (const permission of manifest.permissions ?? []) {
   if (!expectedPermissions.includes(permission)) throw new Error(`Unexpected permission: ${permission}`);
 }
