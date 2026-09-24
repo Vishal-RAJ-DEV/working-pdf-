@@ -28,12 +28,27 @@ export function normalizeRole(value: string | null): "user" | "assistant" | null
  * for the same semantic information over time.
  */
 export function getRole(element: Element): "user" | "assistant" | null {
-  return (
+  const semanticRole =
     normalizeRole(element.getAttribute("data-message-author-role")) ??
     normalizeRole(element.getAttribute("data-turn")) ??
     normalizeRole(element.getAttribute("data-role")) ??
-    normalizeRole(element.getAttribute("data-message-author"))
-  );
+    normalizeRole(element.getAttribute("data-message-author"));
+  if (semanticRole) return semanticRole;
+
+  // Current ChatGPT variants have also used structural classes/markers.
+  if (element.matches(".agent-turn") || element.querySelector(".agent-turn")) return "assistant";
+  if (element.matches(".user-turn") || element.matches('[data-testid="user-message"]') || element.querySelector(".user-turn")) return "user";
+
+  // .text-message is shared by user and assistant. Resolve it only from
+  // distinctive content/metadata so we never classify arbitrary UI text.
+  if (element.matches(".text-message")) {
+    if (element.getAttribute("data-message-model-slug")) return "assistant";
+    if (element.querySelector(".user-message-bubble-color, [class*='user-message-bubble']")) return "user";
+    if (element.querySelector(".markdown, .prose")) return "assistant";
+    if (element.querySelector(".whitespace-pre-wrap")) return "user";
+  }
+
+  return null;
 }
 
 /**
@@ -41,7 +56,7 @@ export function getRole(element: Element): "user" | "assistant" | null {
  */
 function getDescendantRole(element: Element): Element | null {
   return element.querySelector(
-    '[data-message-author-role="user"], [data-message-author-role="assistant"], [data-role="user"], [data-role="assistant"], [data-message-author="user"], [data-message-author="assistant"]'
+    '[data-message-author-role="user"], [data-message-author-role="assistant"], [data-role="user"], [data-role="assistant"], [data-message-author="user"], [data-message-author="assistant"], .agent-turn, .user-turn, [data-testid="user-message"], .text-message'
   );
 }
 
