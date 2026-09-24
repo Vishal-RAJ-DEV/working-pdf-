@@ -9,8 +9,8 @@ import {
   findConversationScrollElement,
   findMessageContent,
   getMessageIdentity,
-  isConversationStreaming,
-  normalizeRole
+  getTurnRole,
+  isConversationStreaming
 } from "./chatgptDomUtils";
 
 export type CollectionFailureCode =
@@ -217,7 +217,7 @@ function captureScrollRestorePoint(document: Document, scrollElement: HTMLElemen
   let bestDistance = Number.POSITIVE_INFINITY;
 
   for (const [index, node] of getRoleNodes(document).entries()) {
-    const role = normalizeRole(node.getAttribute("data-message-author-role") ?? node.getAttribute("data-turn"));
+    const role = getTurnRole(node);
     if (!role) continue;
     const rect = node.getBoundingClientRect();
     if (rect.bottom <= top || rect.top >= bottom) continue;
