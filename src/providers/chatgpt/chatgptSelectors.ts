@@ -7,7 +7,9 @@ export const CHATGPT_SELECTORS = {
     '[data-role="user"]',
     '[data-role="assistant"]',
     '[data-message-author="user"]',
-    '[data-message-author="assistant"]'
+    '[data-message-author="assistant"]',
+    '[data-message-role="user"]',
+    '[data-message-role="assistant"]'
   ].join(','),
   turnShells: [
     '[data-testid^="conversation-turn-"]',
@@ -16,6 +18,11 @@ export const CHATGPT_SELECTORS = {
     '[data-message-uuid]',
     '[data-turn]',
     '[data-testid="user-message"]',
+    '[data-turn-id-container]',
+    'section[data-turn-id]',
+    'article[data-turn-id]',
+    'li[data-message-role]',
+    'main [class*="group/conversation-turn"]',
     '.agent-turn',
     '.user-turn',
     'article[data-turn]',
@@ -23,7 +30,7 @@ export const CHATGPT_SELECTORS = {
     'article[data-message-author-role]',
     'section[data-message-author-role]'
   ].join(','),
-  fallbackRoleNodes: '[data-turn="user"], [data-turn="assistant"], [data-testid="user-message"], .agent-turn, .user-turn',
+  fallbackRoleNodes: '[data-turn="user"], [data-turn="assistant"], [data-testid="user-message"], [data-message-role="user"], [data-message-role="assistant"], .agent-turn, .user-turn',
   heuristicMessageNodes: '.text-message',
   userContent: [
     '[data-testid="collapsible-user-message-content"]',

@@ -32,7 +32,8 @@ export function getRole(element: Element): "user" | "assistant" | null {
     normalizeRole(element.getAttribute("data-message-author-role")) ??
     normalizeRole(element.getAttribute("data-turn")) ??
     normalizeRole(element.getAttribute("data-role")) ??
-    normalizeRole(element.getAttribute("data-message-author"));
+    normalizeRole(element.getAttribute("data-message-author")) ??
+    normalizeRole(element.getAttribute("data-message-role"));
   if (semanticRole) return semanticRole;
 
   // Current ChatGPT variants have also used structural classes/markers.
@@ -56,7 +57,7 @@ export function getRole(element: Element): "user" | "assistant" | null {
  */
 function getDescendantRole(element: Element): Element | null {
   return element.querySelector(
-    '[data-message-author-role="user"], [data-message-author-role="assistant"], [data-role="user"], [data-role="assistant"], [data-message-author="user"], [data-message-author="assistant"], .agent-turn, .user-turn, [data-testid="user-message"], .text-message'
+    '[data-message-author-role="user"], [data-message-author-role="assistant"], [data-role="user"], [data-role="assistant"], [data-message-author="user"], [data-message-author="assistant"], [data-message-role="user"], [data-message-role="assistant"], .agent-turn, .user-turn, [data-testid="user-message"], .text-message'
   );
 }
 
@@ -90,7 +91,7 @@ function parseTurnOrdinal(value: string | null | undefined): number | undefined 
 export function findTurnShell(node: Element): Element {
   return (
     node.closest(
-      '[data-testid^="conversation-turn-"], [data-testid^="conversation-turn"], [data-turn-id], [data-message-id], [data-message-uuid], [data-testid="user-message"], .agent-turn, .user-turn, .text-message, article[data-turn], section[data-turn], article[id], section[id]'
+      '[data-testid^="conversation-turn-"], [data-testid^="conversation-turn"], [data-turn-id], [data-turn-id-container], [data-message-id], [data-message-uuid], [data-testid="user-message"], [data-message-role="user"], [data-message-role="assistant"], section[data-turn-id], article[data-turn-id], li[data-message-role], .agent-turn, .user-turn, .text-message, article[data-turn], section[data-turn], article[id], section[id]'
     ) ?? node
   );
 }
