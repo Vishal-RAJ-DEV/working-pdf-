@@ -23,6 +23,32 @@ export function normalizeRole(value: string | null): "user" | "assistant" | null
   return value === "user" || value === "assistant" ? value : null;
 }
 
+/**
+ * Resolve a role from the element itself. ChatGPT has used several data-* names
+ * for the same semantic information over time.
+ */
+export function getRole(element: Element): "user" | "assistant" | null {
+  return (
+    normalizeRole(element.getAttribute("data-message-author-role")) ??
+    normalizeRole(element.getAttribute("data-turn")) ??
+    normalizeRole(element.getAttribute("data-role")) ??
+    normalizeRole(element.getAttribute("data-message-author"))
+  );
+}
+
+/**
+ * Resolve a role carried by a descendant of a turn wrapper.
+ */
+function getDescendantRole(element: Element): Element | null {
+  return element.querySelector(
+    '[data-message-author-role="user"], [data-message-author-role="assistant"], [data-role="user"], [data-role="assistant"], [data-message-author="user"], [data-message-author="assistant"]'
+  );
+}
+
+export function getTurnRole(element: Element): "user" | "assistant" | null {
+  return getRole(element) ?? (getDescendantRole(element) ? getRole(getDescendantRole(element)!) : null);
+}
+
 export interface MessageIdentity {
   id: string;
   quality: MessageIdentityQuality;
@@ -31,29 +57,44 @@ export interface MessageIdentity {
 
 function parseTurnOrdinal(value: string | null | undefined): number | undefined {
   if (!value) return undefined;
-  const match = value.match(/conversation-turn[-_:]?(\d+)/i);
-  if (!match) return undefined;
-  const parsed = Number(match[1]);
-  return Number.isSafeInteger(parsed) && parsed >= 0 ? parsed : undefined;
+  const patterns = [
+    /conversation-turn[-_:]?(\d+)/i,
+    /turn[-_:]?(\d+)/i
+  ];
+
+  for (const pattern of patterns) {
+    const match = value.match(pattern);
+    if (!match) continue;
+    const parsed = Number(match[1]);
+    if (Number.isSafeInteger(parsed) && parsed >= 0) return parsed;
+  }
+
+  return undefined;
+}
+
+export function findTurnShell(node: Element): Element {
+  return (
+    node.closest(
+      '[data-testid^="conversation-turn-"], [data-testid^="conversation-turn"], [data-turn-id], [data-message-id], [data-message-uuid], article[data-turn], section[data-turn], article[id], section[id]'
+    ) ?? node
+  );
 }
 
 export function getMessageIdentity(node: Element, role: "user" | "assistant", fallbackOrder: number): MessageIdentity {
-  const shell = node.closest('[data-turn-id], [data-message-id], [data-testid^="conversation-turn"], article[id], section[id]');
-  const testId = node.getAttribute("data-testid") ?? shell?.getAttribute("data-testid");
+  const shell = findTurnShell(node);
+  const testId = node.getAttribute("data-testid") ?? shell.getAttribute("data-testid");
   const ordinal = parseTurnOrdinal(testId);
   const direct =
     node.getAttribute("data-message-id")
-    ?? shell?.getAttribute("data-turn-id")
-    ?? shell?.getAttribute("data-message-id")
+    ?? node.getAttribute("data-message-uuid")
+    ?? shell.getAttribute("data-message-id")
+    ?? shell.getAttribute("data-message-uuid")
+    ?? shell.getAttribute("data-turn-id")
     ?? testId
-    ?? shell?.id;
+    ?? shell.id;
 
   if (direct?.trim()) return { id: direct.trim(), quality: "strong", ordinal };
 
-  // Last-resort identity. It intentionally includes position so identical text
-  // in one mounted snapshot remains distinct. The full collector treats this
-  // identity as contextual and will not claim verified completeness after a
-  // virtualized multi-pass traversal that depends on these fallback IDs.
   const normalized = (node.textContent ?? "").replace(/\s+/g, " ").trim();
   return {
     id: `fallback-${role}-${fnv1a(normalized)}-${fallbackOrder}`,
@@ -92,30 +133,47 @@ export function conversationIdentityFromLocation(location: Location): string {
 
 function isUsefulScrollCandidate(element: HTMLElement): boolean {
   const style = getComputedStyle(element);
-  const scrollableOverflow = /(auto|scroll)/.test(style.overflowY);
-  const hasRange = element.scrollHeight > element.clientHeight + 120;
+  const scrollableOverflow = /(auto|scroll|overlay)/.test(style.overflowY);
+  const hasRange = element.scrollHeight > element.clientHeight + 100;
   const usefulViewport = element.clientHeight >= Math.min(280, Math.max(120, window.innerHeight * 0.25));
   return scrollableOverflow && hasRange && usefulViewport;
 }
 
 export function findConversationScrollElement(document: Document): HTMLElement {
-  const roles = Array.from(document.querySelectorAll(CHATGPT_SELECTORS.roleNodes));
-  const fallbackRoles = roles.length ? roles : Array.from(document.querySelectorAll(CHATGPT_SELECTORS.fallbackRoleNodes));
-  const anchor = fallbackRoles[Math.floor(fallbackRoles.length / 2)] ?? document.querySelector("main");
-  let current = anchor?.parentElement ?? null;
-  let broadCandidate: HTMLElement | null = null;
+  // Do not derive the scroller from a message's ancestor. ChatGPT's layout has
+  // changed independently from its turn markup. Prefer the conversation area,
+  // then fall back to the largest nested scroll container.
+  const scopedSelectors = [
+    'main [class*="overflow-y-auto"]',
+    'main [class*="overflow-auto"]',
+    'main [class*="overflow-y-scroll"]',
+    'main [data-radix-scroll-area-viewport]',
+    'main'
+  ];
 
-  while (current && current !== document.body) {
-    if (isUsefulScrollCandidate(current)) {
-      if (current.clientWidth >= Math.min(520, window.innerWidth * 0.55)) return current;
-      broadCandidate ??= current;
+  for (const selector of scopedSelectors) {
+    const candidates = Array.from(document.querySelectorAll(selector))
+      .filter((node): node is HTMLElement => node instanceof HTMLElement);
+
+    for (const candidate of candidates) {
+      if (isUsefulScrollCandidate(candidate)) return candidate;
     }
-    current = current.parentElement;
   }
 
-  if (broadCandidate) return broadCandidate;
-  const scrolling = document.scrollingElement as HTMLElement | null;
-  return scrolling ?? document.documentElement;
+  let best: HTMLElement | null = null;
+  let bestRange = 0;
+  for (const candidate of Array.from(document.querySelectorAll("*"))) {
+    if (!(candidate instanceof HTMLElement)) continue;
+    if (!isUsefulScrollCandidate(candidate)) continue;
+    const range = candidate.scrollHeight - candidate.clientHeight;
+    if (range > bestRange) {
+      best = candidate;
+      bestRange = range;
+    }
+  }
+
+  if (best) return best;
+  return (document.scrollingElement as HTMLElement | null) ?? document.documentElement;
 }
 
 export function dispatchSyntheticScroll(document: Document, element: HTMLElement): void {
