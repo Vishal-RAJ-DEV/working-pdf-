@@ -7,6 +7,7 @@ import { EXTENSION_VERSION } from "../constants/version";
 import { getExportPreferences, resetExportPreferences, saveExportPreferences } from "../services/settingsService";
 import { exportConversationToPdf, NoExportableMessagesError } from "../services/pdfExportService";
 import { isChatGPTUrl, sendToTab } from "./chrome";
+import { extractChatGPTConversationViaPage, normalizeChatGPTApiConversation } from "../providers/chatgpt/chatgptApi";
 import { Header } from "./components/Header";
 import { PageStatus } from "./components/PageStatus";
 import { ConversationSummary } from "./components/ConversationSummary";
@@ -52,6 +53,17 @@ export function Popup() {
         setStatusMessage(ping.message);
         return;
       }
+      const apiResult = await extractChatGPTConversationViaPage(tab.id);
+      if (apiResult.ok) {
+        const apiConversation = normalizeChatGPTApiConversation(apiResult.conversation, { href: tab.url ?? "https://chatgpt.com/" } as Location);
+        if (apiConversation) {
+          setConversation(apiConversation);
+          setPageState("ready");
+          setStatusMessage("Conversation detected from ChatGPT. Full conversation will be verified before PDF generation.");
+          return;
+        }
+      }
+
       const response = await sendToTab(tab.id, { type: "EXTRACT_CONVERSATION", mode: "mounted" });
       if (response.success && response.type === "CONVERSATION") {
         setConversation(response.data);
@@ -108,6 +120,20 @@ export function Popup() {
     setExportStage("collecting");
     setStatusMessage("Loading full conversation…");
     try {
+      const apiResult = await extractChatGPTConversationViaPage(tabId);
+      if (apiResult.ok) {
+        const apiConversation = normalizeChatGPTApiConversation(apiResult.conversation, window.location);
+        if (apiConversation) {
+          setConversation(apiConversation);
+          setExportStage("preparing");
+          setStatusMessage(`Full conversation loaded from ChatGPT. ${apiConversation.messageCount} messages collected. Preparing PDF…`);
+          await exportConversationToPdf(apiConversation, preferences);
+          setExportStage("idle");
+          setStatusMessage("Print page opened. Choose “Save as PDF” in Chrome’s print preview.");
+          return;
+        }
+      }
+
       const response = await sendToTab(tabId, { type: "EXTRACT_CONVERSATION", mode: "full" });
       if (!response.success) {
         if (response.error === "EXTRACTION_CANCELLED") {
