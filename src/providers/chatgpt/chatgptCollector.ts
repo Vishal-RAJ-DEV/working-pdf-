@@ -9,8 +9,8 @@ import {
   findConversationScrollElement,
   findMessageContent,
   getMessageIdentity,
-  isConversationStreaming,
-  normalizeRole
+  getTurnRole,
+  isConversationStreaming
 } from "./chatgptDomUtils";
 
 export type CollectionFailureCode =
@@ -177,7 +177,7 @@ function waitForConversationMutation(root: Node, timeoutMs: number, signal?: Abo
       childList: true,
       subtree: true,
       attributes: true,
-      attributeFilter: ["data-message-author-role", "data-turn-id", "data-message-id", "data-testid", "hidden", "aria-hidden"]
+      attributeFilter: ["data-message-author-role", "data-message-uuid", "data-message-id", "data-message-author", "data-role", "data-turn", "data-turn-id", "data-testid", "hidden", "aria-hidden"]
     });
     const timer = setTimeout(() => finish("timeout"), timeoutMs);
     signal?.addEventListener("abort", onAbort, { once: true });
@@ -217,7 +217,7 @@ function captureScrollRestorePoint(document: Document, scrollElement: HTMLElemen
   let bestDistance = Number.POSITIVE_INFINITY;
 
   for (const [index, node] of getRoleNodes(document).entries()) {
-    const role = normalizeRole(node.getAttribute("data-message-author-role") ?? node.getAttribute("data-turn"));
+    const role = getTurnRole(node);
     if (!role) continue;
     const rect = node.getBoundingClientRect();
     if (rect.bottom <= top || rect.top >= bottom) continue;
