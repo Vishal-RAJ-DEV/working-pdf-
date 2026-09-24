@@ -177,7 +177,7 @@ function waitForConversationMutation(root: Node, timeoutMs: number, signal?: Abo
       childList: true,
       subtree: true,
       attributes: true,
-      attributeFilter: ["data-message-author-role", "data-turn-id", "data-message-id", "data-testid", "hidden", "aria-hidden"]
+      attributeFilter: ["data-message-author-role", "data-message-uuid", "data-message-id", "data-message-author", "data-role", "data-turn", "data-turn-id", "data-testid", "hidden", "aria-hidden"]
     });
     const timer = setTimeout(() => finish("timeout"), timeoutMs);
     signal?.addEventListener("abort", onAbort, { once: true });
