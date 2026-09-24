@@ -89,6 +89,21 @@ describe("ChatGPT conversation extraction", () => {
     expect(data.messages.map((message) => message.sourceOrder)).toEqual([0, 1, 2, 3, 4]);
   });
 
+
+  it("extracts current structural fallbacks when semantic role attributes are absent", () => {
+    document.body.innerHTML = `
+      <div class="text-message relative flex w-full flex-col items-end" data-message-id="u-current">
+        <div class="user-message-bubble-color"><div class="whitespace-pre-wrap">Current user message</div></div>
+      </div>
+      <article class="agent-turn" data-message-uuid="a-current">
+        <div class="markdown"><p>Current assistant message</p></div>
+      </article>
+    `;
+    const data = extractChatGPTConversation(document, window.location);
+    expect(data.messages.map((message) => message.role)).toEqual(["user", "assistant"]);
+    expect(data.messages.map((message) => message.id)).toEqual(["u-current", "a-current"]);
+  });
+
   it("counts code and math nodes", () => {
     document.body.innerHTML = `
       <section data-testid="conversation-turn-0" data-turn-id="a1"><div data-message-author-role="assistant"><div class="markdown">

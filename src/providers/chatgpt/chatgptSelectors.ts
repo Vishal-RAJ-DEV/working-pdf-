@@ -15,12 +15,16 @@ export const CHATGPT_SELECTORS = {
     '[data-turn-id]',
     '[data-message-uuid]',
     '[data-turn]',
+    '[data-testid="user-message"]',
+    '.agent-turn',
+    '.user-turn',
     'article[data-turn]',
     'section[data-turn]',
     'article[data-message-author-role]',
     'section[data-message-author-role]'
   ].join(','),
-  fallbackRoleNodes: '[data-turn="user"], [data-turn="assistant"]',
+  fallbackRoleNodes: '[data-turn="user"], [data-turn="assistant"], [data-testid="user-message"], .agent-turn, .user-turn',
+  heuristicMessageNodes: '.text-message',
   userContent: [
     '[data-testid="collapsible-user-message-content"]',
     '[data-testid="collapsible-user-message-root"]',
