@@ -3,7 +3,7 @@ import { chatGPTProvider } from "../providers/chatgpt/chatgptProvider";
 import { ConversationCollectionError } from "../providers/chatgpt/chatgptCollector";
 import { CHATGPT_SELECTORS } from "../providers/chatgpt/chatgptSelectors";
 import { getRoleNodes } from "../providers/chatgpt/chatgptExtractor";
-import { isConversationStreaming } from "../providers/chatgpt/chatgptDomUtils";
+import { findMessageContent, getTurnRole, isConversationStreaming } from "../providers/chatgpt/chatgptDomUtils";
 import { logger } from "../utils/logger";
 
 logger.info("Content script loaded");
@@ -22,6 +22,57 @@ function diagnostics(): ExtractionDiagnostics {
     streaming: isConversationStreaming(document),
     url: location.href
   };
+}
+
+
+async function waitForConversationHydration(timeoutMs = 5000): Promise<boolean> {
+  if (getRoleNodes(document).length > 0) return true;
+
+  return new Promise((resolve) => {
+    const started = Date.now();
+    let timer: ReturnType<typeof setTimeout> | undefined;
+
+    const cleanup = () => {
+      observer.disconnect();
+      if (timer) clearTimeout(timer);
+    };
+
+    const check = () => {
+      if (getRoleNodes(document).length > 0) {
+        cleanup();
+        resolve(true);
+        return;
+      }
+      if (Date.now() - started >= timeoutMs) {
+        cleanup();
+        resolve(false);
+        return;
+      }
+      timer = setTimeout(check, 150);
+    };
+
+    const observer = new MutationObserver(() => check());
+    observer.observe(document.documentElement, { childList: true, subtree: true, attributes: true });
+    check();
+  });
+}
+
+async function waitForStableConversation(timeoutMs = 2500): Promise<boolean> {
+  const started = Date.now();
+  while (Date.now() - started < timeoutMs) {
+    const nodes = getRoleNodes(document);
+    if (nodes.length > 0) {
+      const hydrated = nodes.some((node) => {
+        const role = getTurnRole(node);
+        if (!role) return false;
+        const content = findMessageContent(node, role);
+        return Boolean(content.textContent?.trim()) || Boolean(content.querySelector("img,svg,canvas"));
+      });
+      if (hydrated) return true;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 150));
+  }
+  return getRoleNodes(document).length > 0;
 }
 
 function publishProgress(event: ExtensionEvent): void {
@@ -57,10 +108,18 @@ chrome.runtime.onMessage.addListener((request: ExtensionRequest, _sender, sendRe
           sendResponse({ success: false, error: "UNSUPPORTED_PAGE", message: "Open a ChatGPT conversation to use this extension." });
           return;
         }
+        const hydrated = await waitForConversationHydration();
+        if (!hydrated) {
+          sendResponse({ success: false, error: "NO_CONVERSATION_FOUND", message: "ChatGPT has not mounted the conversation messages yet. Reopen the extension after the chat finishes loading." });
+          return;
+        }
+
         if (isConversationStreaming(document)) {
           sendResponse({ success: false, error: "CONVERSATION_STILL_GENERATING", message: "Wait for ChatGPT to finish generating before exporting." });
           return;
         }
+
+        await waitForStableConversation();
 
         if (request.mode === "full" && chatGPTProvider.extractFull) {
           activeCollectionController?.abort();

@@ -148,6 +148,8 @@ export function findConversationScrollElement(document: Document): HTMLElement {
     'main [class*="overflow-auto"]',
     'main [class*="overflow-y-scroll"]',
     'main [data-radix-scroll-area-viewport]',
+    'main [data-scroll-root="true"]',
+    '[data-scroll-root="true"]',
     'main'
   ];
 

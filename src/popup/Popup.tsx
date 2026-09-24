@@ -42,7 +42,7 @@ export function Popup() {
       const tab = tabs[0];
       if (!tab?.id || !isChatGPTUrl(tab.url)) {
         setPageState("unsupported");
-        setStatusMessage("This extension currently works on chatgpt.com.");
+        setStatusMessage("This extension works on ChatGPT conversation pages.");
         return;
       }
       setTabId(tab.id);
@@ -59,7 +59,13 @@ export function Popup() {
         setStatusMessage("Ready to export. Full conversation history will be verified before PDF generation.");
       } else if (!response.success && response.error === "NO_CONVERSATION_FOUND") {
         setPageState("empty");
-        setStatusMessage("Start a ChatGPT conversation, then reopen the extension.");
+        const diagnostics = await sendToTab(tab.id, { type: "GET_EXTRACTION_DIAGNOSTICS" });
+        if (diagnostics.success && diagnostics.type === "DIAGNOSTICS") {
+          const d = diagnostics.data;
+          setStatusMessage(`No messages detected. Script is active: roles=${d.roleNodeCount}, turns=${d.turnShellCount}, active=${d.activeRoleCount}. Reload the chat if these are all 0.`);
+        } else {
+          setStatusMessage("No conversation messages were detected. Reload the ChatGPT tab and try again.");
+        }
       } else if (!response.success) {
         setPageState("error");
         setStatusMessage(response.message);

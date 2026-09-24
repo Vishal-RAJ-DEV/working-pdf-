@@ -14,6 +14,7 @@ export const CHATGPT_SELECTORS = {
     '[data-testid^="conversation-turn"]',
     '[data-turn-id]',
     '[data-message-uuid]',
+    '[data-turn]',
     'article[data-turn]',
     'section[data-turn]',
     'article[data-message-author-role]',
