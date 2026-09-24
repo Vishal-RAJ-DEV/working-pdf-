@@ -104,6 +104,17 @@ describe("ChatGPT conversation extraction", () => {
     expect(data.messages.map((message) => message.id)).toEqual(["u-current", "a-current"]);
   });
 
+
+  it("extracts the logged-out message-role ChatGPT variant", () => {
+    document.body.innerHTML = `
+      <li data-message-role="user" data-message-id="u-role"><div class="whitespace-pre-wrap">Hello from the message-role variant</div></li>
+      <li data-message-role="assistant" data-message-id="a-role"><div class="markdown"><p>Assistant reply</p></div></li>
+    `;
+    const data = extractChatGPTConversation(document, window.location);
+    expect(data.messages.map((message) => message.role)).toEqual(["user", "assistant"]);
+    expect(data.messages.map((message) => message.id)).toEqual(["u-role", "a-role"]);
+  });
+
   it("counts code and math nodes", () => {
     document.body.innerHTML = `
       <section data-testid="conversation-turn-0" data-turn-id="a1"><div data-message-author-role="assistant"><div class="markdown">
