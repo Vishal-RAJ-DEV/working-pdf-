@@ -58,56 +58,51 @@ export function getConversationTitle(document: Document): string {
 }
 
 /**
- * Return one message candidate per logical conversation turn.
- *
- * ChatGPT has historically placed the role directly on the message element,
- * but newer layouts can put role metadata on the turn wrapper while the
- * actual role-bearing node is nested below it. Resolve the turn first and
- * only fall back to legacy direct-role selectors when no wrappers are found.
+ * Return message candidates from both conversation turn shells and direct
+ * role-bearing nodes. Current ChatGPT can mix these shapes during hydration,
+ * so do not stop after finding only one representation.
  */
 export function getRoleNodes(document: Document): Element[] {
-  const candidates = Array.from(document.querySelectorAll(CHATGPT_SELECTORS.turnShells));
-  const result: Element[] = [];
-  const seenCandidates = new Set<Element>();
+  const nodes = new Set<Element>();
 
-  for (const shell of candidates) {
-    if (seenCandidates.has(shell)) continue;
-    seenCandidates.add(shell);
+  const add = (node: Element) => {
+    try {
+      if (!isElementMeaningfullyVisible(node)) return;
+    } catch {
+      if (node.getAttribute("hidden") !== null) return;
+    }
+    nodes.add(node);
+  };
 
+  for (const shell of Array.from(document.querySelectorAll(CHATGPT_SELECTORS.turnShells))) {
     const role = getTurnRole(shell);
     if (!role) continue;
 
-    const directRole = getRole(shell) === role
+    const roleNode = getRole(shell) === role
       ? shell
       : shell.querySelector(
           '[data-message-author-role="user"], [data-message-author-role="assistant"], [data-role="user"], [data-role="assistant"], [data-message-author="user"], [data-message-author="assistant"]'
         );
 
-    const node = directRole ?? shell;
-    try {
-      if (!isElementMeaningfullyVisible(node)) continue;
-    } catch {
-      if (node.getAttribute("hidden") !== null || node.getAttribute("aria-hidden") === "true") continue;
-    }
-
-    if (!result.includes(node)) result.push(node);
+    add(roleNode ?? shell);
   }
 
-  if (result.length > 0) return result;
+  // Always include direct role nodes as well. This is critical for layouts
+  // where the persistent turn shell is absent or temporarily not queryable.
+  for (const node of Array.from(document.querySelectorAll(CHATGPT_SELECTORS.roleNodes))) {
+    if (getRole(node)) add(node);
+  }
 
-  // Legacy fallback: some pages expose role nodes without a separately
-  // identifiable conversation-turn wrapper.
-  const legacy = [
-    ...Array.from(document.querySelectorAll(CHATGPT_SELECTORS.roleNodes)),
-    ...Array.from(document.querySelectorAll(CHATGPT_SELECTORS.fallbackRoleNodes))
-  ];
+  for (const node of Array.from(document.querySelectorAll(CHATGPT_SELECTORS.fallbackRoleNodes))) {
+    if (getRole(node)) add(node);
+  }
 
-  const seen = new Set<Element>();
-  return legacy.filter((node) => {
-    const role = getRole(node);
-    if (!role || seen.has(node)) return false;
-    seen.add(node);
-    try { return isElementMeaningfullyVisible(node); } catch { return true; }
+  return Array.from(nodes).sort((a, b) => {
+    if (a === b) return 0;
+    const position = a.compareDocumentPosition(b);
+    if (position & Node.DOCUMENT_POSITION_PRECEDING) return 1;
+    if (position & Node.DOCUMENT_POSITION_FOLLOWING) return -1;
+    return 0;
   });
 }
 
