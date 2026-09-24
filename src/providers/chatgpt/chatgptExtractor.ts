@@ -1,7 +1,7 @@
 import type { ConversationData, ConversationMessage, ConversationStats, ExtractionCompleteness } from "../../types/conversation";
 import type { ContentBlock, InlineNode } from "../../types/content";
 import { CHATGPT_SELECTORS } from "./chatgptSelectors";
-import { conversationIdFromLocation, findConversationScrollElement, findMessageContent, getMessageIdentity, isElementMeaningfullyVisible, normalizeRole } from "./chatgptDomUtils";
+import { conversationIdFromLocation, findConversationScrollElement, findMessageContent, findTurnShell, getMessageIdentity, getRole, getTurnRole, isElementMeaningfullyVisible } from "./chatgptDomUtils";
 import { parseChatGPTMessage } from "./chatgptParser";
 
 function countInline(nodes: InlineNode[]): { mathNodes: number } {
@@ -57,11 +57,57 @@ export function getConversationTitle(document: Document): string {
   return cleaned && cleaned.toLowerCase() !== "chatgpt" ? cleaned : "ChatGPT Conversation";
 }
 
+/**
+ * Return one message candidate per logical conversation turn.
+ *
+ * ChatGPT has historically placed the role directly on the message element,
+ * but newer layouts can put role metadata on the turn wrapper while the
+ * actual role-bearing node is nested below it. Resolve the turn first and
+ * only fall back to legacy direct-role selectors when no wrappers are found.
+ */
 export function getRoleNodes(document: Document): Element[] {
-  const primary = Array.from(document.querySelectorAll(CHATGPT_SELECTORS.roleNodes));
-  const nodes = primary.length ? primary : Array.from(document.querySelectorAll(CHATGPT_SELECTORS.fallbackRoleNodes));
-  return nodes.filter((node) => {
-    try { return isElementMeaningfullyVisible(node); } catch { return node.getAttribute("hidden") === null && node.getAttribute("aria-hidden") !== "true"; }
+  const candidates = Array.from(document.querySelectorAll(CHATGPT_SELECTORS.turnShells));
+  const result: Element[] = [];
+  const seenCandidates = new Set<Element>();
+
+  for (const shell of candidates) {
+    if (seenCandidates.has(shell)) continue;
+    seenCandidates.add(shell);
+
+    const role = getTurnRole(shell);
+    if (!role) continue;
+
+    const directRole = getRole(shell) === role
+      ? shell
+      : shell.querySelector(
+          '[data-message-author-role="user"], [data-message-author-role="assistant"], [data-role="user"], [data-role="assistant"], [data-message-author="user"], [data-message-author="assistant"]'
+        );
+
+    const node = directRole ?? shell;
+    try {
+      if (!isElementMeaningfullyVisible(node)) continue;
+    } catch {
+      if (node.getAttribute("hidden") !== null || node.getAttribute("aria-hidden") === "true") continue;
+    }
+
+    if (!result.includes(node)) result.push(node);
+  }
+
+  if (result.length > 0) return result;
+
+  // Legacy fallback: some pages expose role nodes without a separately
+  // identifiable conversation-turn wrapper.
+  const legacy = [
+    ...Array.from(document.querySelectorAll(CHATGPT_SELECTORS.roleNodes)),
+    ...Array.from(document.querySelectorAll(CHATGPT_SELECTORS.fallbackRoleNodes))
+  ];
+
+  const seen = new Set<Element>();
+  return legacy.filter((node) => {
+    const role = getRole(node);
+    if (!role || seen.has(node)) return false;
+    seen.add(node);
+    try { return isElementMeaningfullyVisible(node); } catch { return true; }
   });
 }
 
@@ -71,11 +117,13 @@ export function extractChatGPTConversation(document: Document, location: Locatio
   const messages: ConversationMessage[] = [];
 
   for (const node of nodes) {
-    const role = normalizeRole(node.getAttribute("data-message-author-role") ?? node.getAttribute("data-turn"));
+    const role = getTurnRole(node) ?? getRole(findTurnShell(node));
     if (!role) continue;
+
     const identity = getMessageIdentity(node, role, messages.length);
     const id = identity.id;
     if (seen.has(id)) continue;
+
     const content = findMessageContent(node, role);
     try {
       const parsed = parseChatGPTMessage(content);
