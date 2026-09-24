@@ -90,7 +90,7 @@ function parseTurnOrdinal(value: string | null | undefined): number | undefined 
 export function findTurnShell(node: Element): Element {
   return (
     node.closest(
-      '[data-testid^="conversation-turn-"], [data-testid^="conversation-turn"], [data-turn-id], [data-message-id], [data-message-uuid], article[data-turn], section[data-turn], article[id], section[id]'
+      '[data-testid^="conversation-turn-"], [data-testid^="conversation-turn"], [data-turn-id], [data-message-id], [data-message-uuid], [data-testid="user-message"], .agent-turn, .user-turn, .text-message, article[data-turn], section[data-turn], article[id], section[id]'
     ) ?? node
   );
 }
