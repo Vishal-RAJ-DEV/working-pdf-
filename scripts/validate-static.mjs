@@ -32,7 +32,8 @@ async function walk(dir) {
     if (info.isDirectory()) await walk(path);
     else if (/\.(ts|tsx|js|jsx|html)$/.test(path)) {
       const source = await readFile(path, "utf8");
-      const sourceForRuntimeCheck = runtimeNetworkAllowlist.has(path) ? source.replace(/\bfetch\s*\(/g, "PAGE_FETCH(") : source;
+      const normalizedPath = path.replaceAll("\\", "/");
+      const sourceForRuntimeCheck = runtimeNetworkAllowlist.has(normalizedPath) ? source.replace(/\bfetch\s*\(/g, "PAGE_FETCH(") : source;
       if (forbiddenRuntime.test(sourceForRuntimeCheck)) throw new Error(`Forbidden runtime construct found in ${path}`);
       if (remoteScript.test(source)) throw new Error(`Remote executable script found in ${path}`);
       for (const pattern of secretPatterns) if (pattern.test(source)) throw new Error(`Possible secret found in ${path}`);
