@@ -103,7 +103,10 @@ describe("ChatGPT API extraction", () => {
     const data = normalizeChatGPTApiConversation(raw, { href: "https://chatgpt.com/c/conv-2" } as Location);
     expect(data?.messages[1].blocks.some((block) => block.type === "heading")).toBe(true);
     expect(data?.messages[1].blocks.some((block) => block.type === "unordered-list")).toBe(true);
-    expect(data?.messages[1].blocks.some((block) => block.type === "math")).toBe(true);
+    const inlineMath = data?.messages[1].blocks.some((block) =>
+      (block.type === "paragraph" || block.type === "heading") && block.children.some((child) => child.type === "math")
+    );
+    expect(inlineMath).toBe(true);
     expect(data?.messages[1].blocks.some((block) => block.type === "code" && block.language === "cpp")).toBe(true);
   });
 });
