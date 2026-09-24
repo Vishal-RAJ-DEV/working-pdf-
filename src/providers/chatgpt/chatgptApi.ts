@@ -358,7 +358,7 @@ function appendMarkdownBlocks(root: Element, markdown: string): void {
         const match = isOrdered ? lines[i].match(/^\s*(\d+)[.)]\s+(.+)$/) : lines[i].match(/^\s*[-+*]\s+(.+)$/);
         if (!match) break;
         const li = root.ownerDocument.createElement("li");
-        appendInline(li, match[2]);
+        appendInline(li, match[2] ?? "");
         list.appendChild(li);
         i++;
       }
