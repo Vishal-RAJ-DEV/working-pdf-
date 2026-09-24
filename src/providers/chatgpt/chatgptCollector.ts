@@ -97,7 +97,8 @@ const TURN_MUTATION_SELECTOR = [
   CHATGPT_SELECTORS.fallbackRoleNodes,
   CHATGPT_SELECTORS.turnShells,
   "[data-message-id]",
-  "[data-turn-id]"
+  "[data-turn-id]",
+  CHATGPT_SELECTORS.heuristicMessageNodes
 ].join(",");
 
 function now(): number {
