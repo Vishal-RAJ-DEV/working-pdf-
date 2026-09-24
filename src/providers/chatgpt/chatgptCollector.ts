@@ -321,7 +321,7 @@ export function isVerifiedBeginning(topStabilityPasses: number, requiredPasses =
 function discoverMountedMessageCandidates(document: Document): MountedMessageCandidate[] {
   const candidates: MountedMessageCandidate[] = [];
   for (const [index, node] of getRoleNodes(document).entries()) {
-    const role = normalizeRole(node.getAttribute("data-message-author-role") ?? node.getAttribute("data-turn"));
+    const role = getTurnRole(node);
     if (!role) continue;
     const identity = getMessageIdentity(node, role, index);
     candidates.push({
