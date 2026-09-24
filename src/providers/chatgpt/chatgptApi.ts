@@ -454,7 +454,7 @@ function normalizeApiMessages(nodes: ChatGPTApiNode[]): ConversationMessage[] {
   return messages;
 }
 
-export function normalizeChatGPTApiConversation(raw: unknown, location: Location): ConversationData | null {
+export function normalizeChatGPTApiConversation(raw: unknown, location: Pick<Location, "href">): ConversationData | null {
   if (!raw || typeof raw !== "object") return null;
   const conversation = raw as ChatGPTApiConversation;
   if (!conversation.mapping || typeof conversation.mapping !== "object" || Array.isArray(conversation.mapping)) return null;
@@ -491,12 +491,6 @@ export type ChatGPTPageApiResult =
   | { ok: true; conversation: unknown }
   | { ok: false; error: string };
 
-function getConversationIdFromPath(pathname: string): string | null {
-  const parts = pathname.split("/").filter(Boolean);
-  const marker = parts.lastIndexOf("c");
-  return marker >= 0 ? parts[marker + 1] ?? null : null;
-}
-
 export async function extractChatGPTConversationViaPage(tabId: number): Promise<ChatGPTPageApiResult> {
   try {
     const results = await chrome.scripting.executeScript({
@@ -518,6 +512,11 @@ export async function extractChatGPTConversationViaPage(tabId: number): Promise<
           if (!accessToken) return { ok: false, error: "NO_ACCESS_TOKEN" };
 
           const accountId = session?.account?.id ?? session?.accountId ?? session?.user?.account_id ?? session?.user?.accountId;
+          const projectId = (() => {
+            const parts = location.pathname.split("/").filter(Boolean);
+            const marker = parts.lastIndexOf("c");
+            return parts.slice(0, marker).find((part) => part.startsWith("g-p-")) ?? null;
+          })();
           const endpoint = `/backend-api/conversation/${encodeURIComponent(conversationId)}`;
           const headers: Record<string, string> = {
             Accept: "application/json",
