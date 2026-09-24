@@ -256,7 +256,7 @@ async function restoreScrollPosition(document: Document, scrollElement: HTMLElem
   if (!point.anchorId || point.anchorOffset == null) return;
   const top = viewportTop(document, scrollElement);
   for (const [index, node] of getRoleNodes(document).entries()) {
-    const role = normalizeRole(node.getAttribute("data-message-author-role") ?? node.getAttribute("data-turn"));
+    const role = getTurnRole(node);
     if (!role) continue;
     const identity = getMessageIdentity(node, role, index);
     if (identity.id !== point.anchorId) continue;
