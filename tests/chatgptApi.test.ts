@@ -2,6 +2,38 @@ import { describe, expect, it } from "vitest";
 import { normalizeChatGPTApiConversation } from "../src/providers/chatgpt/chatgptApi";
 
 describe("ChatGPT API extraction", () => {
+  it("removes internal file citation markers from exported text", () => {
+    const raw = {
+      id: "conv-file",
+      title: "File",
+      current_node: "a1",
+      mapping: {
+        root: { id: "root", parent: null, children: ["u1"] },
+        u1: {
+          id: "u1",
+          parent: "root",
+          children: ["a1"],
+          message: { id: "m1", author: { role: "user" }, content: { content_type: "text", parts: ["Explain this"] } }
+        },
+        a1: {
+          id: "a1",
+          parent: "u1",
+          children: [],
+          message: {
+            id: "m2",
+            author: { role: "assistant" },
+            content: { content_type: "text", parts: ["Here is the answer. fileciteturn0file0L25-L43"] }
+          }
+        }
+      }
+    };
+
+    const data = normalizeChatGPTApiConversation(raw, { href: "https://chatgpt.com/c/conv-file" });
+    expect(data?.messages[1].plainText).toBe("Here is the answer.");
+    expect(data?.messages[1].plainText).not.toContain("filecite");
+  });
+
+
   it("follows current_node to the root and ignores inactive branches/system messages", () => {
     const raw = {
       id: "conv-1",
