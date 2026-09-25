@@ -35,6 +35,12 @@ interface ChatGPTApiConversation {
   mapping?: Record<string, ChatGPTApiNode>;
 }
 
+const CHATGPT_FILE_CITATION_RE = /filecite[^]*/g;
+
+function stripChatGPTFileCitations(value: string): string {
+  return value.replace(CHATGPT_FILE_CITATION_RE, "");
+}
+
 function textFromParts(parts: unknown[] | undefined): string {
   if (!Array.isArray(parts)) return "";
   const out: string[] = [];
@@ -56,7 +62,7 @@ function textFromParts(parts: unknown[] | undefined): string {
       }
     }
   }
-  return out.join("\n").trim();
+  return stripChatGPTFileCitations(out.join("\n")).trim();
 }
 
 function codeBlock(code: string, language?: string): ContentBlock {
