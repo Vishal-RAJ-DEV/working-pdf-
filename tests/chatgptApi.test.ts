@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { normalizeChatGPTApiConversation } from "../src/providers/chatgpt/chatgptApi";
+import { blocksToPlainText } from "../src/parser/blockParser";
 
 describe("ChatGPT API extraction", () => {
   it("removes internal file citation markers from exported text", () => {
@@ -134,7 +135,11 @@ describe("ChatGPT API extraction", () => {
 
     const data = normalizeChatGPTApiConversation(raw, { href: "https://chatgpt.com/c/conv-2" } as Location);
     expect(data?.messages[1].blocks.some((block) => block.type === "heading")).toBe(true);
-    expect(data?.messages[1].blocks.some((block) => block.type === "unordered-list")).toBe(true);
+    const unorderedList = data?.messages[1].blocks.find((block) => block.type === "unordered-list");
+    expect(unorderedList).toBeDefined();
+    if (unorderedList?.type === "unordered-list") {
+      expect(unorderedList.items.map((item) => blocksToPlainText(item.blocks))).toEqual(["one", "two"]);
+    }
     const inlineMath = data?.messages[1].blocks.some((block) =>
       (block.type === "paragraph" || block.type === "heading") && block.children.some((child) => child.type === "math")
     );
