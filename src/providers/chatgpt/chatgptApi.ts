@@ -383,10 +383,16 @@ function appendMarkdownBlocks(root: Element, markdown: string): void {
   }
 }
 
+const CHATGPT_RICH_UI_TAG_RE = /<\\/?(?:box|row|col|grid|grid-item|flow|flow-item|card|text|title|caption|label|badge|icon|divider|spacer|list|list-item|table|table-row|table-cell|table-section|svg|math|code|blockquote|escape|pressable|button|checkbox|radio-group|radio|input|textarea|select|slider|segmented-control|carousel|carousel-item|popover|popover-trigger|popover-content|AsyncImage|AsyncImageGroup|AsyncVideo|Entity|Link|Cite|FollowUp|Chart|MapWidgetV2)\\b[^>]*>/gi;
+
+function stripChatGPTRichUiMarkup(markdown: string): string {
+  return markdown.replace(CHATGPT_RICH_UI_TAG_RE, "");
+}
+
 function markdownToBlocks(markdown: string): ContentBlock[] {
   const doc = document.implementation.createHTMLDocument("api-markdown");
   const root = doc.createElement("div");
-  appendMarkdownBlocks(root, markdown);
+  appendMarkdownBlocks(root, stripChatGPTRichUiMarkup(markdown));
   return parseBlocks(root, chatGPTParserContext);
 }
 
