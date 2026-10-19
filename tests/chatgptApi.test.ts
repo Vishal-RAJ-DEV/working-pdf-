@@ -40,6 +40,38 @@ describe("ChatGPT API extraction", () => {
   });
 
 
+  it("parses single-line and multiline bracket display math as math blocks", () => {
+    const raw = {
+      id: "conv-display-math",
+      title: "Display math",
+      current_node: "a1",
+      mapping: {
+        root: { id: "root", parent: null, children: ["u1"] },
+        u1: { id: "u1", parent: "root", children: ["a1"], message: { id: "m1", author: { role: "user" }, content: { content_type: "text", parts: ["Explain this equation"] } },
+        a1: {
+          id: "a1",
+          parent: "u1",
+          children: [],
+          message: {
+            id: "m2",
+            author: { role: "assistant" },
+            content: {
+              content_type: "text",
+              parts: ["The first equation:\\n\\\\[\\n2d_s = d_f\\n\\\\]\\nThen:\\n\\\\[ d_s \\\\equiv 0 \\\\pmod{\\\\lambda} \\\\]"]
+            }
+          }
+        }
+      }
+    };
+
+    const data = normalizeChatGPTApiConversation(raw, { href: "https://chatgpt.com/c/conv-display-math" });
+    const mathBlocks = data?.messages[1].blocks.filter((block) => block.type === "math") ?? [];
+    expect(mathBlocks).toHaveLength(2);
+    expect(mathBlocks[0]).toMatchObject({ type: "math", displayMode: "block", source: "2d_s = d_f" });
+    expect(mathBlocks[1]).toMatchObject({ type: "math", displayMode: "block", source: "d_s \\\\equiv 0 \\\\pmod{\\\\lambda}" });
+    expect(data?.messages[1].plainText).not.toContain("\\\\[");
+  });
+
   it("removes internal file citation markers from exported text", () => {
     const raw = {
       id: "conv-file",
