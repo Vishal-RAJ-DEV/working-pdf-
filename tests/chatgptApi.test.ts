@@ -3,6 +3,43 @@ import { normalizeChatGPTApiConversation } from "../src/providers/chatgpt/chatgp
 import { blocksToPlainText } from "../src/parser/blockParser";
 
 describe("ChatGPT API extraction", () => {
+  it("removes rich UI component tags while preserving their readable text", () => {
+    const raw = {
+      id: "conv-rich-ui",
+      title: "Rich UI",
+      current_node: "a1",
+      mapping: {
+        root: { id: "root", parent: null, children: ["u1"] },
+        u1: { id: "u1", parent: "root", children: ["a1"], message: { id: "m1", author: { role: "user" }, content: { content_type: "text", parts: ["Show the array"] } } },
+        a1: {
+          id: "a1",
+          parent: "u1",
+          children: [],
+          message: {
+            id: "m2",
+            author: { role: "assistant" },
+            content: {
+              content_type: "text",
+              parts: [
+                "Let's follow this process.\n<box border radius=\"lg\" padding={3} gap={3}>\n<text color=\"secondary\" size=\"sm\">Array: [1, 3, 4, 2, 2]</text>\n<box background=\"#DCEAFE\">Index 0\n<title size=\"xl\">1</title>\n</box>\n<icon name=\"arrow-down\" size=\"xl\"/>\n<text color=\"secondary\">nums[0] = 1</text>\n</box>"
+              ]
+            }
+          }
+        }
+      }
+    };
+
+    const data = normalizeChatGPTApiConversation(raw, { href: "https://chatgpt.com/c/conv-rich-ui" });
+    const text = data?.messages[1].plainText ?? "";
+    expect(text).toContain("Array: [1, 3, 4, 2, 2]");
+    expect(text).toContain("Index 0");
+    expect(text).toContain("nums[0] = 1");
+    expect(text).not.toContain("<box");
+    expect(text).not.toContain("<text");
+    expect(text).not.toContain("<icon");
+  });
+
+
   it("removes internal file citation markers from exported text", () => {
     const raw = {
       id: "conv-file",
