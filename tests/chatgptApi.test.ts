@@ -57,7 +57,7 @@ describe("ChatGPT API extraction", () => {
             author: { role: "assistant" },
             content: {
               content_type: "text",
-              parts: ["The first equation:\\n\\\\[\\n2d_s = d_f\\n\\\\]\\nThen:\\n\\\\[ d_s \\\\equiv 0 \\\\pmod{\\\\lambda} \\\\]"]
+              parts: ["The first equation:", "\\\\[", "2d_s = d_f", "\\\\]", "Then:", "\\\\[ d_s \\\\equiv 0 \\\\pmod{\\\\lambda} \\\\]"]
             }
           }
         }
@@ -68,8 +68,8 @@ describe("ChatGPT API extraction", () => {
     const mathBlocks = data?.messages[1].blocks.filter((block) => block.type === "math") ?? [];
     expect(mathBlocks).toHaveLength(2);
     expect(mathBlocks[0]).toMatchObject({ type: "math", displayMode: "block", source: "2d_s = d_f" });
-    expect(mathBlocks[1]).toMatchObject({ type: "math", displayMode: "block", source: "d_s \\\\equiv 0 \\\\pmod{\\\\lambda}" });
-    expect(data?.messages[1].plainText).not.toContain("\\\\[");
+    expect(mathBlocks[1]).toMatchObject({ type: "math", displayMode: "block", source: "d_s \\equiv 0 \\pmod{\\lambda}" });
+    expect(data?.messages[1].plainText).not.toContain("\\[");
   });
 
   it("removes internal file citation markers from exported text", () => {
