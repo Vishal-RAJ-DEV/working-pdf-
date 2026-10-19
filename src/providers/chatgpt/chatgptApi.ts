@@ -275,7 +275,7 @@ function appendMarkdownBlocks(root: Element, markdown: string): void {
       continue;
     }
 
-    const bracketMath = line.trim().match(/^\\\\\\[([\\s\\S]*?)\\\\\\]$/);
+    const bracketMath = line.trim().match(/^\\\[([\s\S]*?)\\\]$/);
     if (bracketMath) {
       const math = root.ownerDocument.createElement("div");
       math.setAttribute("data-latex", bracketMath[1].trim());
@@ -284,16 +284,16 @@ function appendMarkdownBlocks(root: Element, markdown: string): void {
       i++;
       continue;
     }
-    if (line.trim() === "\\\\[") {
+    if (line.trim() === "\\[") {
       const mathLines: string[] = [];
       i++;
-      while (i < lines.length && lines[i].trim() !== "\\\\]") {
+      while (i < lines.length && lines[i].trim() !== "\\]") {
         mathLines.push(lines[i]);
         i++;
       }
       if (i < lines.length) i++;
       const math = root.ownerDocument.createElement("div");
-      math.setAttribute("data-latex", mathLines.join("\\n").trim());
+      math.setAttribute("data-latex", mathLines.join("\n").trim());
       math.setAttribute("data-math-style", "block");
       root.appendChild(math);
       continue;
