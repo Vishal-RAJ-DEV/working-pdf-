@@ -34,6 +34,11 @@ describe("ChatGPT API extraction", () => {
     expect(text).toContain("Array: [1, 3, 4, 2, 2]");
     expect(text).toContain("Index 0");
     expect(text).toContain("nums[0] = 1");
+    expect(data?.messages[1].blocks[0]).toMatchObject({ type: "rich-ui" });
+    if (data?.messages[1].blocks[0]?.type === "rich-ui") {
+      expect(data.messages[1].blocks[0].source).toContain("<box");
+      expect(data.messages[1].blocks[0].source).toContain("<icon");
+    }
     expect(text).not.toContain("<box");
     expect(text).not.toContain("<text");
     expect(text).not.toContain("<icon");
