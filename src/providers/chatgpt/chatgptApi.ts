@@ -433,15 +433,43 @@ function extractRenderableBlocks(message: ChatGPTApiNode["message"]): ContentBlo
   if (!message?.content) return [];
   const type = message.content.content_type ?? "";
   const parts = Array.isArray(message.content.parts) ? message.content.parts : [];
-  const text = textFromParts(parts);
-  if (!text && type !== "code") return [];
 
-  if (type === "code" || type === "execution_output") {
-    return text ? [codeBlock(text, message.content.language)] : [];
-  }
   if (type === "thoughts" || type === "reasoning_recap" || type === "tether_browsing_display" || type === "tether_quote") {
     return [];
   }
+  if (type === "code" || type === "execution_output") {
+    const text = textFromParts(parts);
+    return text ? [codeBlock(text, message.content.language)] : [];
+  }
+
+  // Preserve multimodal image assets as first-class image blocks. Parsing an
+  // image-only Markdown paragraph can otherwise yield no blocks and silently
+  // drop the assistant message from the normalized conversation.
+  if (type === "multimodal_text") {
+    const textParts: unknown[] = [];
+    const images: ContentBlock[] = [];
+    for (const part of parts) {
+      if (part && typeof part === "object" && (part as Record<string, unknown>).content_type === "image_asset_pointer") {
+        const pointer = (part as Record<string, unknown>).asset_pointer;
+        if (typeof pointer === "string" && /^(?:https?:\\/\\/|data:image\\/)/i.test(pointer)) {
+          images.push({
+            type: "image",
+            src: pointer,
+            alt: "Image",
+            sourceType: pointer.startsWith("data:image/") ? "data" : "remote",
+            mediaKind: "image"
+          });
+        }
+      } else {
+        textParts.push(part);
+      }
+    }
+    const text = textFromParts(textParts);
+    return [...(text ? markdownToBlocks(text) : []), ...images];
+  }
+
+  const text = textFromParts(parts);
+  if (!text) return [];
   return markdownToBlocks(text);
 }
 
