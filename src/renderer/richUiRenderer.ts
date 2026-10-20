@@ -32,9 +32,12 @@ function parseMarkup(source: string): RichNode {
 }
 
 function getAttr(attrs: string, name: string): string | undefined {
-  const re = new RegExp("(?:^|\\s)" + name + "\\s*=\\s*(?:"([^"]*)"|'([^']*)'|\\{([^}]*)\\})");
-  const match = attrs.match(re);
-  return match?.[1] ?? match?.[2] ?? match?.[3]?.replace(/^["']|["']$/g, "");
+  const quoted = attrs.match(new RegExp('(?:^|\\s)' + name + '\\s*=\\s*"([^"]*)"'));
+  const single = attrs.match(new RegExp("(?:^|\\\\s)" + name + "\\\\s*=\\\\s*'([^']*)'"));
+  const braced = attrs.match(new RegExp('(?:^|\\s)' + name + '\\s*=\\s*\\{([^}]*)\\}'));
+  const value = quoted?.[1] ?? single?.[1] ?? braced?.[1];
+  if (value !== undefined) return value.replace(/^["']|["']$/g, "");
+  return new RegExp("(?:^|\\s)" + name + "(?:\\s|$)").test(attrs) ? "true" : undefined;
 }
 function numericAttr(attrs: string, name: string): number | undefined {
   const raw = getAttr(attrs, name);
