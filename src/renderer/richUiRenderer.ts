@@ -59,7 +59,7 @@ function setStyle(element: HTMLElement, node: RichNode): void {
   if (align === "start" || align === "left") element.style.alignItems = "flex-start";
   if (getAttr(a, "justify") === "center") element.style.justifyContent = "center";
   if (getAttr(a, "justify") === "between") element.style.justifyContent = "space-between";
-  if (width && /^(\d+(\.\d+)?(px|%|rem|em|vw))$/.test(width)) element.style.width = width;
+    if (width && /^(\d+(\.\d+)?(px|%|rem|em|vw))$/.test(width)) img.style.width = width;
   if (direction === "row") element.style.flexDirection = "row";
   if (direction === "column") element.style.flexDirection = "column";
   if (["box","row","col","grid","grid-item","flow","flow-item","card"].includes(node.tag)) {
