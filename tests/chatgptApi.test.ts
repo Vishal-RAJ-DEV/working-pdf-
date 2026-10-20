@@ -52,7 +52,7 @@ describe("ChatGPT API extraction", () => {
       current_node: "a1",
       mapping: {
         root: { id: "root", parent: null, children: ["u1"] },
-        u1: { id: "u1", parent: "root", children: ["a1"], message: { id: "m1", author: { role: "user" }, content: { content_type: "text", parts: ["Explain this equation"] } },
+        u1: { id: "u1", parent: "root", children: ["a1"], message: { id: "m1", author: { role: "user" }, content: { content_type: "text", parts: ["Explain this equation"] } } },
         a1: {
           id: "a1",
           parent: "u1",
@@ -62,7 +62,7 @@ describe("ChatGPT API extraction", () => {
             author: { role: "assistant" },
             content: {
               content_type: "text",
-              parts: ["The first equation:", "\\\\[", "2d_s = d_f", "\\\\]", "Then:", "\\\\[ d_s \\\\equiv 0 \\\\pmod{\\\\lambda} \\\\]"]
+              parts: ["The first equation:", "\\[", "2d_s = d_f", "\\]", "Then:", "\\[ d_s \\equiv 0 \\pmod{\\lambda} \\]"]
             }
           }
         }
