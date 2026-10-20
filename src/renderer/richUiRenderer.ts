@@ -127,7 +127,7 @@ function renderNode(document: Document, node: RichNode): Node {
     const f = document.createDocumentFragment();
     const parts = node.children.join("").replace(/\r\n?/g,"\n").split("\n");
     const appendTextAndImages = (parent: HTMLElement, value: string) => {
-      const imagePattern = /!\\[([^\\]]*)\\]\\((https?:\\/\\/[^\\s)]+|data:image\\/[^\\s)]+)\\)/g;
+      const imagePattern = /!\[([^\]]*)\]\((https?:\/\/[^\s)]+|data:image\/[^\s)]+)\)/g;
       let cursor = 0;
       let match: RegExpExecArray | null;
       while ((match = imagePattern.exec(value))) {
