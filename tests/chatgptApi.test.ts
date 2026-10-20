@@ -34,6 +34,11 @@ describe("ChatGPT API extraction", () => {
     expect(text).toContain("Array: [1, 3, 4, 2, 2]");
     expect(text).toContain("Index 0");
     expect(text).toContain("nums[0] = 1");
+    expect(data?.messages[1].blocks[0]).toMatchObject({ type: "rich-ui" });
+    if (data?.messages[1].blocks[0]?.type === "rich-ui") {
+      expect(data.messages[1].blocks[0].source).toContain("<box");
+      expect(data.messages[1].blocks[0].source).toContain("<icon");
+    }
     expect(text).not.toContain("<box");
     expect(text).not.toContain("<text");
     expect(text).not.toContain("<icon");
@@ -47,7 +52,7 @@ describe("ChatGPT API extraction", () => {
       current_node: "a1",
       mapping: {
         root: { id: "root", parent: null, children: ["u1"] },
-        u1: { id: "u1", parent: "root", children: ["a1"], message: { id: "m1", author: { role: "user" }, content: { content_type: "text", parts: ["Explain this equation"] } },
+        u1: { id: "u1", parent: "root", children: ["a1"], message: { id: "m1", author: { role: "user" }, content: { content_type: "text", parts: ["Explain this equation"] } } },
         a1: {
           id: "a1",
           parent: "u1",
@@ -57,7 +62,7 @@ describe("ChatGPT API extraction", () => {
             author: { role: "assistant" },
             content: {
               content_type: "text",
-              parts: ["The first equation:", "\\\\[", "2d_s = d_f", "\\\\]", "Then:", "\\\\[ d_s \\\\equiv 0 \\\\pmod{\\\\lambda} \\\\]"]
+              parts: ["The first equation:", "\\[", "2d_s = d_f", "\\]", "Then:", "\\[ d_s \\equiv 0 \\pmod{\\lambda} \\]"]
             }
           }
         }

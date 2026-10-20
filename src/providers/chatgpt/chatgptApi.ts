@@ -399,7 +399,7 @@ function appendMarkdownBlocks(root: Element, markdown: string): void {
     const paragraphLines = [line];
     i++;
     while (i < lines.length && lines[i].trim()) {
-      if (/^\s{0,3}(`{3,}|~{3,})\s*/.test(lines[i]) || /^\s{0,3}#{1,6}\s+/.test(lines[i]) || /^\s*>/.test(lines[i]) || /^\s*[-+*]\s+/.test(lines[i]) || /^\s*\d+[.)]\s+/.test(lines[i])) break;
+      if (/^\s{0,3}(`{3,}|~{3,})\s*/.test(lines[i]) || /^\s{0,3}#{1,6}\s+/.test(lines[i]) || /^\s*>/.test(lines[i]) || /^\s*[-+*]\s+/.test(lines[i]) || /^\s*\d+[.)]\s+/.test(lines[i]) || lines[i].trim().startsWith("\\[")) break;
       paragraphLines.push(lines[i]);
       i++;
     }
@@ -414,9 +414,14 @@ function stripChatGPTRichUiMarkup(markdown: string): string {
 }
 
 function markdownToBlocks(markdown: string): ContentBlock[] {
+  if (CHATGPT_RICH_UI_TAG_RE.test(markdown)) {
+    CHATGPT_RICH_UI_TAG_RE.lastIndex = 0;
+    return [{ type: "rich-ui", source: markdown, text: stripChatGPTRichUiMarkup(markdown).replace(/\n{3,}/g, "\n\n").trim() }];
+  }
+  CHATGPT_RICH_UI_TAG_RE.lastIndex = 0;
   const doc = document.implementation.createHTMLDocument("api-markdown");
   const root = doc.createElement("div");
-  appendMarkdownBlocks(root, stripChatGPTRichUiMarkup(markdown));
+  appendMarkdownBlocks(root, markdown);
   return parseBlocks(root, chatGPTParserContext);
 }
 
