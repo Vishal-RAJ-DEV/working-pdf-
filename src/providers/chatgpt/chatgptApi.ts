@@ -399,7 +399,7 @@ function appendMarkdownBlocks(root: Element, markdown: string): void {
     const paragraphLines = [line];
     i++;
     while (i < lines.length && lines[i].trim()) {
-      if (/^\s{0,3}(`{3,}|~{3,})\s*/.test(lines[i]) || /^\s{0,3}#{1,6}\s+/.test(lines[i]) || /^\s*>/.test(lines[i]) || /^\s*[-+*]\s+/.test(lines[i]) || /^\s*\d+[.)]\s+/.test(lines[i])) break;
+      if (/^\s{0,3}(`{3,}|~{3,})\s*/.test(lines[i]) || /^\s{0,3}#{1,6}\s+/.test(lines[i]) || /^\s*>/.test(lines[i]) || /^\s*[-+*]\s+/.test(lines[i]) || /^\s*\d+[.)]\s+/.test(lines[i]) || lines[i].trim().startsWith("\\[")) break;
       paragraphLines.push(lines[i]);
       i++;
     }
