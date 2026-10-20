@@ -33,7 +33,7 @@ function parseMarkup(source: string): RichNode {
 
 function getAttr(attrs: string, name: string): string | undefined {
   const quoted = attrs.match(new RegExp('(?:^|\\s)' + name + '\\s*=\\s*"([^"]*)"'));
-  const single = attrs.match(new RegExp("(?:^|\\\\s)" + name + "\\\\s*=\\\\s*'([^']*)'"));
+  const single = attrs.match(new RegExp("(?:^|\\s)" + name + "\\s*=\\s*'([^']*)'"));
   const braced = attrs.match(new RegExp('(?:^|\\s)' + name + '\\s*=\\s*\\{([^}]*)\\}'));
   const value = quoted?.[1] ?? single?.[1] ?? braced?.[1];
   if (value !== undefined) return value.replace(/^["']|["']$/g, "");
