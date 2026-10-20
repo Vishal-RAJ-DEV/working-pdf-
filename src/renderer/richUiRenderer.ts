@@ -126,9 +126,28 @@ function renderNode(document: Document, node: RichNode): Node {
   if (node.tag === "raw-text") {
     const f = document.createDocumentFragment();
     const parts = node.children.join("").replace(/\r\n?/g,"\n").split("\n");
+    const appendTextAndImages = (parent: HTMLElement, value: string) => {
+      const imagePattern = /!\\[([^\\]]*)\\]\\((https?:\\/\\/[^\\s)]+|data:image\\/[^\\s)]+)\\)/g;
+      let cursor = 0;
+      let match: RegExpExecArray | null;
+      while ((match = imagePattern.exec(value))) {
+        if (match.index > cursor) parent.appendChild(document.createTextNode(value.slice(cursor, match.index)));
+        const image = document.createElement("img");
+        image.className = "rich-ui-image";
+        image.alt = match[1] || "Image";
+        const src = safeImageUrl(match[2]);
+        if (src) image.src = src;
+        parent.appendChild(image);
+        cursor = imagePattern.lastIndex;
+      }
+      if (cursor < value.length) parent.appendChild(document.createTextNode(value.slice(cursor)));
+    };
     parts.forEach((part,index) => {
-      if (part.trim()) { const p=document.createElement("p"); p.textContent=part.trim(); f.appendChild(p); }
-      else if (index > 0 && index < parts.length-1) f.appendChild(document.createElement("br"));
+      if (part.trim()) {
+        const p=document.createElement("p");
+        appendTextAndImages(p, part.trim());
+        f.appendChild(p);
+      } else if (index > 0 && index < parts.length-1) f.appendChild(document.createElement("br"));
     });
     return f;
   }
