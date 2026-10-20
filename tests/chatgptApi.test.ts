@@ -77,30 +77,6 @@ describe("ChatGPT API extraction", () => {
     expect(data?.messages[1].plainText).not.toContain("\\[");
   });
 
-  it("preserves resolved multimodal image assets as Markdown images", () => {
-    const raw = {
-      id: "conv-image",
-      title: "Image",
-      current_node: "a1",
-      mapping: {
-        root: { id: "root", parent: null, children: ["u1"] },
-        u1: { id: "u1", parent: "root", children: ["a1"], message: { id: "m1", author: { role: "user" }, content: { content_type: "text", parts: ["What is this?"] } } },
-        a1: {
-          id: "a1",
-          parent: "u1",
-          children: [],
-          message: {
-            id: "m2",
-            author: { role: "assistant" },
-            content: { content_type: "multimodal_text", parts: [{ content_type: "image_asset_pointer", asset_pointer: "data:image/png;base64,aGVsbG8=" }] }
-          }
-        }
-      }
-    };
-    const data = normalizeChatGPTApiConversation(raw, { href: "https://chatgpt.com/c/conv-image" });
-    expect(data?.messages[1].blocks.some((block) => block.type === "image")).toBe(true);
-  });
-
   it("removes internal file citation markers from exported text", () => {
     const raw = {
       id: "conv-file",

@@ -58,11 +58,7 @@ function textFromParts(parts: unknown[] | undefined): string {
       const contentType = (part as Record<string, unknown>).content_type;
       if (contentType === "image_asset_pointer") {
         const pointer = (part as Record<string, unknown>).asset_pointer;
-        if (typeof pointer === "string" && /^(?:https?:\/\/|data:image\/)/i.test(pointer)) {
-          out.push(`![Image](${pointer})`);
-        } else {
-          out.push(`[Image: ${typeof pointer === "string" ? pointer : "image"}]`);
-        }
+        out.push(`[Image: ${typeof pointer === "string" ? pointer : "image"}]`);
       }
     }
   }
@@ -433,43 +429,15 @@ function extractRenderableBlocks(message: ChatGPTApiNode["message"]): ContentBlo
   if (!message?.content) return [];
   const type = message.content.content_type ?? "";
   const parts = Array.isArray(message.content.parts) ? message.content.parts : [];
+  const text = textFromParts(parts);
+  if (!text && type !== "code") return [];
 
+  if (type === "code" || type === "execution_output") {
+    return text ? [codeBlock(text, message.content.language)] : [];
+  }
   if (type === "thoughts" || type === "reasoning_recap" || type === "tether_browsing_display" || type === "tether_quote") {
     return [];
   }
-  if (type === "code" || type === "execution_output") {
-    const text = textFromParts(parts);
-    return text ? [codeBlock(text, message.content.language)] : [];
-  }
-
-  // Preserve multimodal image assets as first-class image blocks. Parsing an
-  // image-only Markdown paragraph can otherwise yield no blocks and silently
-  // drop the assistant message from the normalized conversation.
-  if (type === "multimodal_text") {
-    const textParts: unknown[] = [];
-    const images: ContentBlock[] = [];
-    for (const part of parts) {
-      if (part && typeof part === "object" && (part as Record<string, unknown>).content_type === "image_asset_pointer") {
-        const pointer = (part as Record<string, unknown>).asset_pointer;
-        if (typeof pointer === "string" && (pointer.startsWith("http://") || pointer.startsWith("https://") || pointer.startsWith("data:image/"))) {
-          images.push({
-            type: "image",
-            src: pointer,
-            alt: "Image",
-            sourceType: pointer.startsWith("data:image/") ? "data" : "remote",
-            mediaKind: "image"
-          });
-        }
-      } else {
-        textParts.push(part);
-      }
-    }
-    const text = textFromParts(textParts);
-    return [...(text ? markdownToBlocks(text) : []), ...images];
-  }
-
-  const text = textFromParts(parts);
-  if (!text) return [];
   return markdownToBlocks(text);
 }
 
@@ -601,65 +569,7 @@ export async function extractChatGPTConversationViaPage(tabId: number): Promise<
 
           const response = await fetch(endpoint, { method: "GET", credentials: "include", cache: "no-store", headers });
           if (!response.ok) return { ok: false, error: `CONVERSATION_${response.status}` };
-          const conversation = await response.json();
-
-          // Resolve image asset pointers while we're still in the authenticated ChatGPT page.
-          // Signed URLs are used as a fallback when an image is too large to inline safely.
-          const mapping = conversation?.mapping;
-          if (mapping && typeof mapping === "object") {
-            let inlineBytes = 0;
-            const maxInlineBytes = 8 * 1024 * 1024;
-            const maxSingleImageBytes = 3 * 1024 * 1024;
-            const toDataUrl = (blob: Blob): Promise<string> => new Promise((resolve, reject) => {
-              const reader = new FileReader();
-              reader.onload = () => typeof reader.result === "string" ? resolve(reader.result) : reject(new Error("IMAGE_READ_FAILED"));
-              reader.onerror = () => reject(new Error("IMAGE_READ_FAILED"));
-              reader.readAsDataURL(blob);
-            });
-            const resolvePointer = async (part: Record<string, unknown>) => {
-              const pointer = typeof part.asset_pointer === "string" ? part.asset_pointer : "";
-              if (!/^(?:sediment|file-service):\/\//.test(pointer)) return;
-              const fileId = pointer.replace(/^(?:sediment|file-service):\/\//, "").split(/[?#]/)[0];
-              if (!fileId) return;
-              try {
-                const fileEndpoint = `/backend-api/files/download/${encodeURIComponent(fileId)}?conversation_id=${encodeURIComponent(conversationId)}&inline=true`;
-                const fileHeaders: Record<string, string> = {
-                  Accept: "application/json",
-                  Authorization: `Bearer ${accessToken}`,
-                  "X-OpenAI-Target-Path": fileEndpoint,
-                  "X-OpenAI-Target-Route": "/backend-api/files/download/{file_id}"
-                };
-                if (typeof accountId === "string" && accountId) fileHeaders["ChatGPT-Account-ID"] = accountId;
-                const fileResponse = await fetch(fileEndpoint, { credentials: "include", cache: "no-store", headers: fileHeaders });
-                if (!fileResponse.ok) return;
-                const details = await fileResponse.json();
-                if (typeof details?.download_url !== "string") return;
-                part.asset_pointer = details.download_url;
-                const imageResponse = await fetch(details.download_url, { cache: "no-store" });
-                if (!imageResponse.ok) return;
-                const blob = await imageResponse.blob();
-                if (!blob.type.startsWith("image/")) return;
-                if (blob.size <= maxSingleImageBytes && inlineBytes + blob.size <= maxInlineBytes) {
-                  part.asset_pointer = await toDataUrl(blob);
-                  inlineBytes += blob.size;
-                }
-              } catch {
-                // Keep the original pointer or signed URL fallback; text extraction remains usable.
-              }
-            };
-            const pending: Promise<void>[] = [];
-            for (const node of Object.values(mapping) as Array<{ message?: { content?: { content_type?: string; parts?: unknown[] } } }>) {
-              const content = node?.message?.content;
-              if (content?.content_type !== "multimodal_text" || !Array.isArray(content.parts)) continue;
-              for (const part of content.parts) {
-                if (part && typeof part === "object" && (part as Record<string, unknown>).content_type === "image_asset_pointer") {
-                  pending.push(resolvePointer(part as Record<string, unknown>));
-                }
-              }
-            }
-            await Promise.all(pending);
-          }
-          return { ok: true, conversation };
+          return { ok: true, conversation: await response.json() };
         } catch {
           return { ok: false, error: "NETWORK_ERROR" };
         }

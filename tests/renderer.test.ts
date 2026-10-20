@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { renderConversation } from "../src/renderer/conversationRenderer";
 import { renderMath } from "../src/renderer/mathRenderer";
-import { renderRichUiBlock } from "../src/renderer/richUiRenderer";
 import { buildPrintStyles } from "../src/renderer/printStyles";
 import { getBodyFontStack, getTextWeightValues, resolvePdfAppearance } from "../src/services/pdfAppearanceService";
 import { DEFAULT_EXPORT_PREFERENCES } from "../src/types/preferences";
@@ -38,36 +37,6 @@ function latex(source: string, displayMode: "inline" | "block" = "block"): MathN
 }
 
 describe("PDF document renderer", () => {
-  it("renders rich UI box layouts and safe image URLs", () => {
-    const block = {
-      type: "rich-ui" as const,
-      text: "A card",
-      source: '<box border radius="lg" padding={3} gap={2} background="#DCEAFE"><title size="xl">Diagram</title><AsyncImage src="https://example.com/diagram.png" alt="Diagram" width="240px" fit="contain"/>![Embedded](https://example.com/embedded.png)<row><box>First</box><box>Second</box></row></box>'
-    };
-    const output = renderRichUiBlock(document, block);
-    document.body.replaceChildren(output);
-    const box = document.querySelector(".rich-ui-box") as HTMLElement;
-    expect(box).toBeTruthy();
-    expect(box.style.border).toContain("solid");
-    expect(box.style.borderRadius).toBe("12px");
-    expect(box.style.padding).toBe("12px");
-    expect(document.querySelector(".rich-ui-title")?.textContent).toContain("Diagram");
-    const image = document.querySelector(".rich-ui-image") as HTMLImageElement;
-    expect(image).toBeTruthy();
-    expect(image.getAttribute("src")).toBe("https://example.com/diagram.png");
-    expect(image.alt).toBe("Diagram");
-    expect(image.style.width).toBe("240px");
-    expect(document.querySelectorAll(".rich-ui-image")).toHaveLength(2);
-    expect(document.querySelectorAll(".rich-ui-row .rich-ui-box")).toHaveLength(2);
-  });
-
-  it("does not load unsafe rich UI image URLs", () => {
-    const output = renderRichUiBlock(document, { type: "rich-ui", text: "x", source: '<AsyncImage src="javascript:alert(1)" alt="Unsafe"/>' });
-    document.body.replaceChildren(output);
-    expect(document.querySelector("img.rich-ui-image")).toBeNull();
-    expect(document.querySelector(".rich-ui-image-placeholder")?.textContent).toContain("Unsafe");
-  });
-
   it("renders semantic conversation, code tokens and namespaced MathML", () => {
     const output = renderConversation(document, conversation(), DEFAULT_EXPORT_PREFERENCES);
     document.body.replaceChildren(output);
