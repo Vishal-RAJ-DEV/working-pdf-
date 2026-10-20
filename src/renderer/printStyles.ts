@@ -126,6 +126,17 @@ thead { display: table-header-group; } tr { break-inside: avoid; }
 .rich-ui-table-section[header] { font-weight: 600; }
 .rich-ui-block .rich-ui-node p { margin: 0; }
 .rich-ui-block .rich-ui-node > p + p { margin-top: .3em; }
+.rich-ui-image-wrap { display: flex; justify-content: center; align-items: center; max-width: 100%; margin: .45em 0; }
+.rich-ui-image { display: block; max-width: 100%; height: auto; object-fit: contain; }
+.rich-ui-image-group { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 8px; max-width: 100%; margin: .45em 0; }
+.rich-ui-image-group .rich-ui-image-wrap { flex: 1 1 180px; }
+.rich-ui-image-placeholder { display: block; padding: 12px; border: 1px dashed var(--pdf-rule); border-radius: 8px; color: var(--pdf-muted); text-align: center; font-size: .85em; }
+.rich-ui-box,.rich-ui-card { break-inside: avoid; }
+.rich-ui-row { display: flex; flex-direction: row; gap: 8px; }
+.rich-ui-col { display: flex; flex-direction: column; }
+.rich-ui-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+.rich-ui-table { width: 100%; border-collapse: collapse; table-layout: auto; }
+.rich-ui-table th,.rich-ui-table td { border: 1px solid var(--pdf-rule); padding: .35em .5em; text-align: left; vertical-align: top; }
 @media print {
   html, body { background: transparent !important; }
   .print-toolbar { display: none !important; }
