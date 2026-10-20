@@ -53,13 +53,13 @@ function setStyle(element: HTMLElement, node: RichNode): void {
   if (gap !== undefined) element.style.gap = (gap * 4) + "px";
   if (radius) element.style.borderRadius = ({sm:"4px",md:"8px",lg:"12px",full:"9999px"} as Record<string,string>)[radius] ?? radius;
   if (background && /^(#[0-9a-f]{3,8}|transparent|white|black|[a-z]+)$/i.test(background)) element.style.backgroundColor = background;
-  if (/\\bborder\\b/.test(a)) element.style.border = "1px solid var(--pdf-rule)";
+  if (getAttr(a, "border")) element.style.border = "1px solid var(--pdf-rule)";
   if (align === "center") element.style.alignItems = "center";
   if (align === "end" || align === "right") element.style.alignItems = "flex-end";
   if (align === "start" || align === "left") element.style.alignItems = "flex-start";
   if (getAttr(a, "justify") === "center") element.style.justifyContent = "center";
   if (getAttr(a, "justify") === "between") element.style.justifyContent = "space-between";
-  if (width && /^(\\d+(\\.\\d+)?(px|%|rem|em|vw))$/.test(width)) element.style.width = width;
+  if (width && /^(\d+(\.\d+)?(px|%|rem|em|vw))$/.test(width)) element.style.width = width;
   if (direction === "row") element.style.flexDirection = "row";
   if (direction === "column") element.style.flexDirection = "column";
   if (["box","row","col","grid","grid-item","flow","flow-item","card"].includes(node.tag)) {
@@ -82,7 +82,7 @@ function setStyle(element: HTMLElement, node: RichNode): void {
 function safeImageUrl(value: string | undefined): string | undefined {
   if (!value) return undefined;
   const url = value.trim();
-  if (/^data:image\\/(?:png|jpeg|gif|webp|svg\\+xml);base64,/i.test(url)) return url;
+  if (/^data:image\/(?:png|jpeg|gif|webp|svg\+xml);base64,/i.test(url)) return url;
   try {
     const parsed = new URL(url);
     return parsed.protocol === "https:" || parsed.protocol === "http:" ? parsed.href : undefined;
@@ -103,8 +103,8 @@ function renderImage(document: Document, node: RichNode): HTMLElement {
     img.src = src;
     const width = getAttr(node.attrs, "width");
     const height = getAttr(node.attrs, "height");
-    if (width && /^(\\d+(\\.\\d+)?(px|%|rem|em|vw))$/.test(width)) img.style.width = width;
-    if (height && /^(\\d+(\\.\\d+)?(px|%|rem|em|vh))$/.test(height)) img.style.height = height;
+  if (width && /^(\d+(\.\d+)?(px|%|rem|em|vw))$/.test(width)) element.style.width = width;
+    if (height && /^(\d+(\.\d+)?(px|%|rem|em|vh))$/.test(height)) img.style.height = height;
     const fit = getAttr(node.attrs, "fit");
     img.style.objectFit = fit === "contain" || fit === "cover" ? fit : "contain";
     const radius = getAttr(node.attrs, "radius");
