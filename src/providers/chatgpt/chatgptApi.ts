@@ -451,7 +451,7 @@ function extractRenderableBlocks(message: ChatGPTApiNode["message"]): ContentBlo
     for (const part of parts) {
       if (part && typeof part === "object" && (part as Record<string, unknown>).content_type === "image_asset_pointer") {
         const pointer = (part as Record<string, unknown>).asset_pointer;
-        if (typeof pointer === "string" && /^(?:https?:\\/\\/|data:image\\/)/i.test(pointer)) {
+        if (typeof pointer === "string" && (pointer.startsWith("http://") || pointer.startsWith("https://") || pointer.startsWith("data:image/"))) {
           images.push({
             type: "image",
             src: pointer,
