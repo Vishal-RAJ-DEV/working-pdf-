@@ -110,12 +110,6 @@ export interface HorizontalRuleBlock {
   type: "horizontal-rule";
 }
 
-export interface RichUiBlock {
-  type: "rich-ui";
-  source: string;
-  text: string;
-}
-
 export interface CodeToken {
   text: string;
   tokenType: CodeTokenType;
@@ -162,7 +156,6 @@ export type ContentBlock =
   | BlockquoteBlock
   | TableBlock
   | HorizontalRuleBlock
-  | RichUiBlock
   | CodeBlock
   | MathNode
   | ImageBlock;

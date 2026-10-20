@@ -6,7 +6,6 @@ import { renderMath } from "./mathRenderer";
 import { renderTable } from "./tableRenderer";
 import { renderImage } from "./imageRenderer";
 import { el } from "./dom";
-import { renderRichUiBlock } from "./richUiRenderer";
 
 function renderList(document: Document, block: Extract<ContentBlock, { type: "ordered-list" | "unordered-list" }>, preferences: ExportPreferences): HTMLElement {
   const list: HTMLOListElement | HTMLUListElement = block.type === "ordered-list" ? el(document, "ol") : el(document, "ul");
@@ -43,7 +42,6 @@ export function renderBlock(document: Document, block: ContentBlock, preferences
     case "code": return renderCodeBlock(document, block, preferences);
     case "math": return renderMath(document, block);
     case "image": return renderImage(document, block);
-    case "rich-ui": return renderRichUiBlock(document, block);
   }
 }
 
