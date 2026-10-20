@@ -32,7 +32,7 @@ function parseMarkup(source: string): RichNode {
 }
 
 function getAttr(attrs: string, name: string): string | undefined {
-  const re = new RegExp("(?:^|\\\\s)" + name + "\\\\s*=\\\\s*(?:\\"([^\\"]*)\\"|'([^']*)'|\\\\{([^}]*)\\\\})");
+  const re = new RegExp("(?:^|\\s)" + name + "\\s*=\\s*(?:\\"([^\\"]*)\\"|'([^']*)'|\\{([^}]*)\\})");
   const match = attrs.match(re);
   return match?.[1] ?? match?.[2] ?? match?.[3]?.replace(/^["']|["']$/g, "");
 }
@@ -44,13 +44,13 @@ function numericAttr(attrs: string, name: string): number | undefined {
 }
 function setStyle(element: HTMLElement, node: RichNode): void {
   const a = node.attrs, padding = numericAttr(a, "padding"), gap = numericAttr(a, "gap");
-  const radius = getAttr(a, "radius"), background = getAttr(a, "background"), border = getAttr(a, "border");
+  const radius = getAttr(a, "radius"), background = getAttr(a, "background");
   const align = getAttr(a, "align"), width = getAttr(a, "width"), direction = getAttr(a, "direction");
   if (padding !== undefined) element.style.padding = (padding * 4) + "px";
   if (gap !== undefined) element.style.gap = (gap * 4) + "px";
   if (radius) element.style.borderRadius = ({sm:"4px",md:"8px",lg:"12px",full:"9999px"} as Record<string,string>)[radius] ?? radius;
   if (background && /^(#[0-9a-f]{3,8}|transparent|white|black|[a-z]+)$/i.test(background)) element.style.backgroundColor = background;
-  if (border) element.style.border = "1px solid var(--pdf-rule)";
+  if (/\\bborder\\b/.test(a)) element.style.border = "1px solid var(--pdf-rule)";
   if (align === "center") element.style.alignItems = "center";
   if (align === "end" || align === "right") element.style.alignItems = "flex-end";
   if (align === "start" || align === "left") element.style.alignItems = "flex-start";
