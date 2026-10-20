@@ -595,7 +595,14 @@ export async function extractChatGPTConversationViaPage(tabId: number): Promise<
               if (!fileId) return;
               try {
                 const fileEndpoint = `/backend-api/files/download/${encodeURIComponent(fileId)}?conversation_id=${encodeURIComponent(conversationId)}&inline=true`;
-                const fileResponse = await fetch(fileEndpoint, { credentials: "include", cache: "no-store", headers });
+                const fileHeaders: Record<string, string> = {
+                  Accept: "application/json",
+                  Authorization: `Bearer ${accessToken}`,
+                  "X-OpenAI-Target-Path": fileEndpoint,
+                  "X-OpenAI-Target-Route": "/backend-api/files/download/{file_id}"
+                };
+                if (typeof accountId === "string" && accountId) fileHeaders["ChatGPT-Account-ID"] = accountId;
+                const fileResponse = await fetch(fileEndpoint, { credentials: "include", cache: "no-store", headers: fileHeaders });
                 if (!fileResponse.ok) return;
                 const details = await fileResponse.json();
                 if (typeof details?.download_url !== "string") return;
