@@ -42,7 +42,7 @@ describe("PDF document renderer", () => {
     const block = {
       type: "rich-ui" as const,
       text: "A card",
-      source: '<box border radius="lg" padding={3} gap={2} background="#DCEAFE"><title size="xl">Diagram</title><AsyncImage src="https://example.com/diagram.png" alt="Diagram" width="240px" fit="contain"/><row><box>First</box><box>Second</box></row></box>'
+      source: '<box border radius="lg" padding={3} gap={2} background="#DCEAFE"><title size="xl">Diagram</title><AsyncImage src="https://example.com/diagram.png" alt="Diagram" width="240px" fit="contain"/>![Embedded](https://example.com/embedded.png)<row><box>First</box><box>Second</box></row></box>'
     };
     const output = renderRichUiBlock(document, block);
     document.body.replaceChildren(output);
@@ -57,6 +57,7 @@ describe("PDF document renderer", () => {
     expect(image.getAttribute("src")).toBe("https://example.com/diagram.png");
     expect(image.alt).toBe("Diagram");
     expect(image.style.width).toBe("240px");
+    expect(document.querySelectorAll(".rich-ui-image")).toHaveLength(2);
     expect(document.querySelectorAll(".rich-ui-row .rich-ui-box")).toHaveLength(2);
   });
 
