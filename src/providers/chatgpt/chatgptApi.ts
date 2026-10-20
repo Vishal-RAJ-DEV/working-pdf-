@@ -58,7 +58,7 @@ function textFromParts(parts: unknown[] | undefined): string {
       const contentType = (part as Record<string, unknown>).content_type;
       if (contentType === "image_asset_pointer") {
         const pointer = (part as Record<string, unknown>).asset_pointer;
-        if (typeof pointer === "string" && /^(?:https?:\\/\\/|data:image\\/)/i.test(pointer)) {
+        if (typeof pointer === "string" && /^(?:https?:\/\/|data:image\/)/i.test(pointer)) {
           out.push(`![Image](${pointer})`);
         } else {
           out.push(`[Image: ${typeof pointer === "string" ? pointer : "image"}]`);
@@ -590,8 +590,8 @@ export async function extractChatGPTConversationViaPage(tabId: number): Promise<
             });
             const resolvePointer = async (part: Record<string, unknown>) => {
               const pointer = typeof part.asset_pointer === "string" ? part.asset_pointer : "";
-              if (!/^(?:sediment|file-service):\\/\\//.test(pointer)) return;
-              const fileId = pointer.replace(/^(?:sediment|file-service):\\/\\//, "").split(/[?#]/)[0];
+              if (!/^(?:sediment|file-service):\/\//.test(pointer)) return;
+              const fileId = pointer.replace(/^(?:sediment|file-service):\/\//, "").split(/[?#]/)[0];
               if (!fileId) return;
               try {
                 const fileEndpoint = `/backend-api/files/download/${encodeURIComponent(fileId)}?conversation_id=${encodeURIComponent(conversationId)}&inline=true`;
