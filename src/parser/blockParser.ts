@@ -113,7 +113,6 @@ export function blocksToPlainText(blocks: ContentBlock[]): string {
       case "code": return block.code;
       case "math": return block.fallbackText;
       case "image": return block.alt ? `[Image: ${block.alt}]` : "[Image]";
-      case "rich-ui": return block.text;
     }
   }).filter(Boolean).join("\n\n").trim();
 }

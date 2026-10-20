@@ -113,19 +113,6 @@ thead { display: table-header-group; } tr { break-inside: avoid; }
 .media-block img { display: block; max-width: 100%; max-height: 240mm; width: auto; height: auto; margin: 0 auto; object-fit: contain; }
 .media-block figcaption { margin-top: .28em; font-size: .76em; font-weight: var(--pdf-meta-weight); color: var(--pdf-muted); }
 .media-placeholder { padding: .62em; border: 1px dashed #a1a1aa; color: var(--pdf-muted); font-size: .8em; font-weight: var(--pdf-meta-weight); }
-.rich-ui-block { display: block; width: 100%; margin: .55em 0 .75em; break-inside: auto; }
-.rich-ui-node { min-width: 0; max-width: 100%; }
-.rich-ui-box,.rich-ui-card,.rich-ui-grid-item,.rich-ui-flow-item { border: 1px solid var(--pdf-rule); }
-.rich-ui-row { flex-direction: row; }
-.rich-ui-text,.rich-ui-caption,.rich-ui-label { line-height: 1.45; }
-.rich-ui-title { margin: .35em 0; }
-.rich-ui-icon { display: inline-block; font-size: 1.15em; line-height: 1; text-align: center; }
-.rich-ui-table { width: 100%; margin: .35em 0; border-collapse: collapse; }
-.rich-ui-table-row { break-inside: avoid; }
-.rich-ui-table-cell { border: 1px solid var(--pdf-rule); padding: .3em .45em; vertical-align: top; }
-.rich-ui-table-section[header] { font-weight: 600; }
-.rich-ui-block .rich-ui-node p { margin: 0; }
-.rich-ui-block .rich-ui-node > p + p { margin-top: .3em; }
 @media print {
   html, body { background: transparent !important; }
   .print-toolbar { display: none !important; }
