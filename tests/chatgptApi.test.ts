@@ -62,7 +62,7 @@ describe("ChatGPT API extraction", () => {
             author: { role: "assistant" },
             content: {
               content_type: "text",
-              parts: ["The first equation:", "\\[", "2d_s = d_f", "\\]", "Then:", "\\[ d_s \\equiv 0 \\pmod{\\lambda} \\]"]
+              parts: ["The first equation:", "\\\\[", "2d_s = d_f", "\\\\]", "Then:", "\\\\[ d_s \\\\equiv 0 \\\\pmod{\\\\lambda} \\\\]"]
             }
           }
         }
