@@ -32,7 +32,7 @@ function parseMarkup(source: string): RichNode {
 }
 
 function getAttr(attrs: string, name: string): string | undefined {
-  const re = new RegExp("(?:^|\\s)" + name + "\\s*=\\s*(?:\\"([^\\"]*)\\"|'([^']*)'|\\{([^}]*)\\})");
+  const re = new RegExp("(?:^|\\s)" + name + "\\s*=\\s*(?:"([^"]*)"|'([^']*)'|\\{([^}]*)\\})");
   const match = attrs.match(re);
   return match?.[1] ?? match?.[2] ?? match?.[3]?.replace(/^["']|["']$/g, "");
 }
